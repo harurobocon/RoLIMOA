@@ -2,80 +2,89 @@ import type { ConfigType } from './types.js';
 
 export default {
   contest_info: {
-    name: '関東夏ロボコン2023',
+    name: '関東夏ロボコン2026',
   },
   rule: {
     global_objects: [],
     task_objects: [
       {
-        id: 'Utsunomiya',
-        description: '宇都宮',
+        id: 'contact_material',
+        description: '建材に接触 (10点)',
         initialValue: 0,
         min: 0,
         max: 1,
       },
       {
-        id: 'Chiba',
-        description: '千葉',
+        id: 'material_on_base',
+        description: '土台上の建材 (5点/個)',
         initialValue: 0,
+        min: 0,
+        max: 6,
       },
       {
-        id: 'Saitama',
-        description: 'さいたま',
+        id: 'castle_tier1',
+        description: '丘ゾーン: 城1段目 (10点/個)',
         initialValue: 0,
+        min: 0,
+        max: 6,
       },
       {
-        id: 'Yokohama',
-        description: '横浜',
+        id: 'castle_tier2',
+        description: '丘ゾーン: 城2段目 (20点/個)',
         initialValue: 0,
+        min: 0,
+        max: 6,
       },
       {
-        id: 'Shibuya',
-        description: '渋谷',
+        id: 'castle_tier3',
+        description: '丘ゾーン: 城3段目 (70点/個)',
         initialValue: 0,
+        min: 0,
+        max: 6,
       },
       {
         id: 'violation',
         description: '違反回数',
         initialValue: 0,
+        min: 0,
       },
     ],
     score: {
       format: 'simple',
       expression: [
         {
-          id: 'Utsunomiya',
+          id: 'contact_material',
           coefficient: 10,
         },
         {
-          id: 'Chiba',
+          id: 'material_on_base',
+          coefficient: 5,
+        },
+        {
+          id: 'castle_tier1',
           coefficient: 10,
         },
         {
-          id: 'Saitama',
-          coefficient: 11,
+          id: 'castle_tier2',
+          coefficient: 20,
         },
         {
-          id: 'Yokohama',
-          coefficient: 14,
-        },
-        {
-          id: 'Shibuya',
-          coefficient: 15,
+          id: 'castle_tier3',
+          coefficient: 70,
         },
       ],
     },
     vgoal: {
-      name: 'Vゴール',
+      name: '築城',
       condition: {
-        type: 'disabled',
+        type: 'alwaysOk',
       },
     },
     control_panel: {
       type: 'custom',
       panels: [
         {
-          id: 'Utsunomiya',
+          id: 'contact_material',
           type: 'multi_button',
           option: {
             buttons: [
@@ -95,7 +104,7 @@ export default {
           },
         },
         {
-          id: 'Chiba',
+          id: 'material_on_base',
           type: 'multi_button',
           option: {
             buttons: [
@@ -122,15 +131,11 @@ export default {
                 command: '+2',
                 label: '+2',
               },
-              {
-                command: '+4',
-                label: '+4',
-              },
             ],
           },
         },
         {
-          id: 'Saitama',
+          id: 'castle_tier1',
           type: 'multi_button',
           option: {
             buttons: [
@@ -157,15 +162,11 @@ export default {
                 command: '+2',
                 label: '+2',
               },
-              {
-                command: '+4',
-                label: '+4',
-              },
             ],
           },
         },
         {
-          id: 'Yokohama',
+          id: 'castle_tier2',
           type: 'multi_button',
           option: {
             buttons: [
@@ -192,15 +193,11 @@ export default {
                 command: '+2',
                 label: '+2',
               },
-              {
-                command: '+4',
-                label: '+4',
-              },
             ],
           },
         },
         {
-          id: 'Shibuya',
+          id: 'castle_tier3',
           type: 'multi_button',
           option: {
             buttons: [
@@ -221,15 +218,7 @@ export default {
               {
                 command: '+1',
                 label: '+1',
-                shortcutKey: 'Z',
-              },
-              {
-                command: '+2',
-                label: '+2',
-              },
-              {
-                command: '+4',
-                label: '+4',
+                shortcutKey: 'D',
               },
             ],
           },
