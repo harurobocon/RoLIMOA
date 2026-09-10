@@ -1,13 +1,19 @@
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 import CachedIcon from '@mui/icons-material/Cached';
+import GavelIcon from '@mui/icons-material/Gavel';
 import TwitterIcon from '@mui/icons-material/Twitter';
 import {
+  Alert,
   Box,
   Button,
+  FormControl,
   FormControlLabel,
+  FormLabel,
   Grid2,
   IconButton,
   Paper,
+  Radio,
+  RadioGroup,
   Switch,
   type SxProps,
   Table,
@@ -30,6 +36,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { ScoreBlock } from '~/components/ScoreBlock';
 import { useDisplayScore } from '~/functional/useDisplayScore';
 import { LyricalSocket } from '~/lyricalSocket';
+import { judgeWinner } from '~/custom/rule.winner';
 import { generateTweetText } from '~/util/tweetFormatter';
 
 const thStyle: SxProps<Theme> = {
@@ -99,12 +106,47 @@ const ResultConfirm = () => {
 
   const [comment, setComment] = useState<string>('');
   const [postTweet, setPostTweet] = useState<boolean>(true);
+  const [refereeSelectedWinner, setRefereeSelectedWinner] = useState<'red' | 'blue' | ''>('');
+  const [overrideRefereeDecision, setOverrideRefereeDecision] = useState<boolean>(false);
 
-  // 試合が切り替わったらコメントをリセット
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reset comment when match changes
+  // ルールに基づく勝敗自動判定
+  const judgeResult = useMemo(() => {
+    return judgeWinner(score, redScoreValue, blueScoreValue);
+  }, [score, redScoreValue, blueScoreValue]);
+
+  // 試合が切り替わったらコメントと審判選択をリセット
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset when match changes
   useEffect(() => {
     setComment('');
+    setRefereeSelectedWinner('');
+    setOverrideRefereeDecision(false);
   }, [match.name]);
+
+  // 適用される勝者
+  const effectiveWinner: 'red' | 'blue' | 'none' = useMemo(() => {
+    if (judgeResult.requiresRefereeDecision || overrideRefereeDecision) {
+      return refereeSelectedWinner || 'none';
+    }
+    return judgeResult.winner;
+  }, [judgeResult, overrideRefereeDecision, refereeSelectedWinner]);
+
+  // 適用されるスコア状態（勝者フラグを更新）
+  const effectiveScore: ScoreState = useMemo(() => {
+    return {
+      ...score,
+      fields: {
+        ...score.fields,
+        red: {
+          ...score.fields.red,
+          winner: effectiveWinner === 'red',
+        },
+        blue: {
+          ...score.fields.blue,
+          winner: effectiveWinner === 'blue',
+        },
+      },
+    };
+  }, [score, effectiveWinner]);
 
   const onCommentChange = (e: React.ChangeEvent<HTMLInputElement>) => setComment(e.target.value);
   const onPostTweetChange = (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -113,35 +155,66 @@ const ResultConfirm = () => {
   const previewText = useMemo(() => {
     return generateTweetText({
       match,
-      score,
+      score: effectiveScore,
       redScoreValue,
       blueScoreValue,
       comment,
     });
-  }, [match, score, redScoreValue, blueScoreValue, comment]);
+  }, [match, effectiveScore, redScoreValue, blueScoreValue, comment]);
 
-  const isConfirmable = isLastPhase && !match.isConfirmed && currentPhase.id !== 'default';
+  // 審判選択が必須なのにまだ選択されていないか
+  const isRefereeSelectionRequired =
+    (judgeResult.requiresRefereeDecision || overrideRefereeDecision) && !refereeSelectedWinner;
+
+  const isConfirmable =
+    isLastPhase &&
+    !match.isConfirmed &&
+    currentPhase.id !== 'default' &&
+    !isRefereeSelectionRequired;
+
+  const redTeamDisplayName = match.teams.red?.name || match.teams.red?.shortName || '赤チーム';
+  const blueTeamDisplayName = match.teams.blue?.name || match.teams.blue?.shortName || '青チーム';
 
   const onConfirmButtonClick = useCallback(() => {
     const confirmedAt = Number(new Date());
     const confirmedBy = 'not implemented';
 
+    // 審判判定で決定された場合、コメントに「審判判定」を反映
+    let finalComment = comment.trim();
+    if (judgeResult.requiresRefereeDecision || overrideRefereeDecision) {
+      if (!finalComment) {
+        finalComment = '審判判定';
+      } else if (!finalComment.includes('審判判定')) {
+        finalComment = `${finalComment} (審判判定)`;
+      }
+    }
+
     const matchAction = matchStateSlice.actions.setConfirmed(true);
     const resultRecordAction = resultRecordsStateSlice.actions.addResult({
       match,
-      finalScore: score,
+      finalScore: effectiveScore,
       confirmedScore: {
-        blue: blueScoreValue, // 現在は確定スコアの編集機能がないため
-        red: redScoreValue, // 最終スコアと同じ値になる
+        blue: blueScoreValue,
+        red: redScoreValue,
       },
-      comment,
+      comment: finalComment,
       postTweet,
       confirmedAt,
       confirmedBy,
     });
 
     LyricalSocket.dispatch([matchAction, resultRecordAction], dispatch);
-  }, [match, score, blueScoreValue, redScoreValue, comment, postTweet, dispatch]);
+  }, [
+    match,
+    effectiveScore,
+    blueScoreValue,
+    redScoreValue,
+    comment,
+    postTweet,
+    dispatch,
+    judgeResult.requiresRefereeDecision,
+    overrideRefereeDecision,
+  ]);
 
   return (
     <Box sx={{ width: '100%' }}>
@@ -161,6 +234,111 @@ const ResultConfirm = () => {
           </TableRow>
         </TableBody>
       </Table>
+
+      {/* 勝敗判定セクション */}
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 1.5,
+          mb: 2,
+          backgroundColor: (theme) =>
+            theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.04)' : '#fdfdfd',
+          borderColor: judgeResult.requiresRefereeDecision ? 'warning.main' : 'divider',
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+          <GavelIcon
+            fontSize="small"
+            color={judgeResult.requiresRefereeDecision ? 'warning' : 'primary'}
+          />
+          <Typography variant="subtitle2" fontWeight="bold">
+            勝敗判定 (ルール2.13.1)
+          </Typography>
+        </Box>
+
+        {judgeResult.requiresRefereeDecision ? (
+          <Alert severity="warning" sx={{ mb: 1.5 }}>
+            ルール2.13.1に基づき、得点および獲得項目内訳がすべて同点のため
+            <strong>【審判の判定】</strong>が必要です。勝利チームを選択してください。
+          </Alert>
+        ) : (
+          <Box sx={{ mb: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              判定基準:{' '}
+              <strong>
+                優先順位 {judgeResult.priorityLevel} ({judgeResult.reason})
+              </strong>
+            </Typography>
+            <Typography variant="body1" fontWeight="bold" sx={{ mt: 0.5 }}>
+              勝者:{' '}
+              {judgeResult.winner === 'red'
+                ? `🔴 ${redTeamDisplayName}`
+                : `🔵 ${blueTeamDisplayName}`}
+            </Typography>
+          </Box>
+        )}
+
+        {/* 審判判定選択ラジオボタン（審判判定が必要な場合、または手動オーバーライド時） */}
+        {(judgeResult.requiresRefereeDecision || overrideRefereeDecision) && (
+          <FormControl component="fieldset" sx={{ mt: 1, width: '100%' }}>
+            <FormLabel component="legend" sx={{ fontSize: '0.85rem', fontWeight: 'bold' }}>
+              審判判定による勝者選択 (必須):
+            </FormLabel>
+            <RadioGroup
+              row
+              value={refereeSelectedWinner}
+              onChange={(e) => setRefereeSelectedWinner(e.target.value as 'red' | 'blue')}
+              sx={{ mt: 0.5 }}
+            >
+              <FormControlLabel
+                value="red"
+                control={<Radio color="error" />}
+                label={
+                  <Typography variant="body2" fontWeight="bold" color="error.main">
+                    🔴 赤: {redTeamDisplayName}
+                  </Typography>
+                }
+                disabled={match.isConfirmed}
+              />
+              <FormControlLabel
+                value="blue"
+                control={<Radio color="primary" />}
+                label={
+                  <Typography variant="body2" fontWeight="bold" color="primary.main">
+                    🔵 青: {blueTeamDisplayName}
+                  </Typography>
+                }
+                disabled={match.isConfirmed}
+              />
+            </RadioGroup>
+          </FormControl>
+        )}
+
+        {/* 自動判定が出ているが審判判定で上書きしたい場合の手動トグル */}
+        {!judgeResult.requiresRefereeDecision && !match.isConfirmed && (
+          <Box sx={{ mt: 1 }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  size="small"
+                  checked={overrideRefereeDecision}
+                  onChange={(e) => {
+                    setOverrideRefereeDecision(e.target.checked);
+                    if (!e.target.checked) {
+                      setRefereeSelectedWinner('');
+                    }
+                  }}
+                />
+              }
+              label={
+                <Typography variant="caption" color="text.secondary">
+                  審判判定で勝者を手動指定する（反則・特例等）
+                </Typography>
+              }
+            />
+          </Box>
+        )}
+      </Paper>
 
       <FormControlLabel
         control={
@@ -251,7 +429,11 @@ const ResultConfirm = () => {
         onClick={onConfirmButtonClick}
         disabled={!isConfirmable}
       >
-        {isLastPhase ? '試合結果を確定' : '競技が進行中です'}{' '}
+        {!isLastPhase
+          ? '競技が進行中です'
+          : isRefereeSelectionRequired
+            ? '審判判定で勝者を選択してください'
+            : '試合結果を確定'}{' '}
         <AssignmentTurnedInIcon sx={{ ml: 0.5 }} />
       </Button>
     </Box>
