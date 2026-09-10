@@ -9,6 +9,7 @@ export type ResultRecord = {
   finalScore: ScoreState; // 最終的な試合状況
 
   comment?: string; // 備考
+  postTweet?: boolean; // X (Twitter) への投稿フラグ
   confirmedScore: ConfirmedScore; // 確定した点数（基本的にはfinalScoreで算出されるスコアと同じになる）
   confirmedBy?: string; // 結果を確定したユーザ名
   confirmedAt?: number; // 結果を確定した時刻

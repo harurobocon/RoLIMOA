@@ -1,11 +1,14 @@
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 import CachedIcon from '@mui/icons-material/Cached';
+import TwitterIcon from '@mui/icons-material/Twitter';
 import {
   Box,
   Button,
+  FormControlLabel,
   Grid2,
   IconButton,
   Paper,
+  Switch,
   type SxProps,
   Table,
   TableBody,
@@ -22,11 +25,12 @@ import type { FieldSideType, ScoreState } from '@rolimoa/common/redux';
 import { resultRecordsStateSlice } from '@rolimoa/common/redux';
 import { type MatchState, matchStateSlice } from '@rolimoa/common/redux';
 import type { CurrentPhaseState } from '@rolimoa/common/redux';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { ScoreBlock } from '~/components/ScoreBlock';
 import { useDisplayScore } from '~/functional/useDisplayScore';
 import { LyricalSocket } from '~/lyricalSocket';
+import { generateTweetText } from '~/util/tweetFormatter';
 
 const thStyle: SxProps<Theme> = {
   whiteSpace: 'nowrap',
@@ -94,7 +98,27 @@ const ResultConfirm = () => {
   const isLastPhase = Phase.isLast(currentPhase.id);
 
   const [comment, setComment] = useState<string>('');
+  const [postTweet, setPostTweet] = useState<boolean>(true);
+
+  // 試合が切り替わったらコメントをリセット
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset comment when match changes
+  useEffect(() => {
+    setComment('');
+  }, [match.name]);
+
   const onCommentChange = (e: React.ChangeEvent<HTMLInputElement>) => setComment(e.target.value);
+  const onPostTweetChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setPostTweet(e.target.checked);
+
+  const previewText = useMemo(() => {
+    return generateTweetText({
+      match,
+      score,
+      redScoreValue,
+      blueScoreValue,
+      comment,
+    });
+  }, [match, score, redScoreValue, blueScoreValue, comment]);
 
   const isConfirmable = isLastPhase && !match.isConfirmed && currentPhase.id !== 'default';
 
@@ -111,16 +135,17 @@ const ResultConfirm = () => {
         red: redScoreValue, // 最終スコアと同じ値になる
       },
       comment,
+      postTweet,
       confirmedAt,
       confirmedBy,
     });
 
     LyricalSocket.dispatch([matchAction, resultRecordAction], dispatch);
-  }, [match, score, blueScoreValue, redScoreValue, comment, dispatch]);
+  }, [match, score, blueScoreValue, redScoreValue, comment, postTweet, dispatch]);
 
   return (
-    <Box>
-      <Table sx={{ marginBottom: '3rem' }} size="small">
+    <Box sx={{ width: '100%' }}>
+      <Table sx={{ marginBottom: '1.5rem' }} size="small">
         <TableBody>
           <TableRow>
             <TableCell component="th" scope="row">
@@ -137,16 +162,88 @@ const ResultConfirm = () => {
         </TableBody>
       </Table>
 
+      <FormControlLabel
+        control={
+          <Switch
+            checked={postTweet}
+            onChange={onPostTweetChange}
+            color="primary"
+            disabled={match.isConfirmed}
+          />
+        }
+        label={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <TwitterIcon fontSize="small" sx={{ color: '#1d9bf0' }} />
+            <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+              確定時にX (Twitter) に投稿する
+            </Typography>
+          </Box>
+        }
+        sx={{ mb: 1 }}
+      />
+
       <TextField
-        label="コメント [optional]"
+        label="試合コメント（X/Twitter投稿用）"
+        placeholder="例: 素早い回収と6連続の投擲により「ファンファーレ」を達成しました！"
         multiline
         fullWidth
-        rows={4}
+        rows={3}
         onChange={onCommentChange}
         value={comment}
         sx={{ marginBottom: '1rem' }}
         disabled={match.isConfirmed}
       />
+
+      {postTweet && (
+        <Paper
+          variant="outlined"
+          sx={{
+            mb: 2,
+            p: 1.5,
+            backgroundColor: (theme) =>
+              theme.palette.mode === 'dark' ? 'rgba(29, 155, 240, 0.08)' : '#f8f9fa',
+            borderColor: (theme) =>
+              previewText.length > 140 ? theme.palette.error.main : theme.palette.divider,
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              mb: 0.8,
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: '#1d9bf0' }}>
+              <TwitterIcon sx={{ fontSize: '1rem' }} />
+              <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
+                ツイートプレビュー
+              </Typography>
+            </Box>
+            <Typography
+              variant="caption"
+              sx={{
+                fontWeight: 'bold',
+                color: previewText.length > 140 ? 'error.main' : 'text.secondary',
+              }}
+            >
+              {previewText.length} / 140文字
+            </Typography>
+          </Box>
+          <Typography
+            variant="body2"
+            sx={{
+              fontSize: '0.8rem',
+              lineHeight: 1.4,
+              wordBreak: 'break-all',
+              whiteSpace: 'pre-wrap',
+            }}
+          >
+            {previewText}
+          </Typography>
+        </Paper>
+      )}
+
       <Button
         variant="contained"
         color="primary"
@@ -154,7 +251,8 @@ const ResultConfirm = () => {
         onClick={onConfirmButtonClick}
         disabled={!isConfirmable}
       >
-        {isLastPhase ? '試合結果を確定' : '競技が進行中です'} <AssignmentTurnedInIcon />
+        {isLastPhase ? '試合結果を確定' : '競技が進行中です'}{' '}
+        <AssignmentTurnedInIcon sx={{ ml: 0.5 }} />
       </Button>
     </Box>
   );
@@ -209,7 +307,7 @@ export const MatchResultContainer = () => {
               width: '100%',
               height: '100%',
               display: 'flex',
-              alignItems: 'end',
+              alignItems: 'flex-start',
               paddingLeft: '1rem',
             }}
           >

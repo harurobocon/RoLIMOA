@@ -16,6 +16,10 @@ google_spreadsheet = [
     "google>=3.0.0",
     "gspread>=6.2.0",
 ]
+twitter = [
+    "tweepy>=4.14.0",
+    "python-dotenv>=1.0.0",
+]
 
 [build-system]
 requires = ["hatchling"]
