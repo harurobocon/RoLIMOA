@@ -8,6 +8,8 @@ import { type AnyAction, createStore } from 'redux';
 import WebSocket from 'ws';
 import { loadFromFile, saveToFile } from './backup.js';
 
+import { notifyRotacsMatchStatus } from './rotacsClient.js';
+
 const { app, getWss } = expressWs(express());
 
 const store = createStore(rootReducer, loadFromFile('./save'));
@@ -52,6 +54,9 @@ app.ws('/ws', (ws, _req) => {
       for (const action of actions) {
         store.dispatch(action);
       }
+
+      // Notify rotacs about match/phase update asynchronously
+      notifyRotacsMatchStatus(store.getState());
 
       for (const client of wss.clients) {
         if (client.readyState === WebSocket.OPEN) {
