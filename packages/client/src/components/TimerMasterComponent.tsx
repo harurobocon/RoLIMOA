@@ -50,7 +50,11 @@ export const TimerMasterComponent = ({
       <Grid2 container spacing={1}>
         <Grid2 container size={{ xs: 8 }} spacing={1}>
           <Grid2 size={12}>
-            <TimerDisplay descriptionVariant="h6" displayTimeVariant="h2" />
+            <TimerDisplay
+              descriptionVariant="h6"
+              displayTimeVariant="h2"
+              displayTimeSx={{ fontFamily: 'monospace' }}
+            />
           </Grid2>
           <Grid2
             size={12}
