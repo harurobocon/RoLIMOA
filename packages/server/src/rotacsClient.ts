@@ -9,7 +9,8 @@ export async function notifyRotacsMatchStatus(storeState: Record<string, unknown
     const phaseState = (storeState as any)?.phase?.current;
 
     const payload = {
-      match_id: matchState?.name || undefined,
+      match_id: matchState?.matchId || matchState?.name || undefined,
+      match_no: matchState?.matchNo || undefined,
       current_phase: phaseState?.id || 'in_progress',
       is_confirmed: matchState?.isConfirmed || false,
       team_red: matchState?.teams?.red

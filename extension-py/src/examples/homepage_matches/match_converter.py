@@ -108,11 +108,15 @@ def convert_payload_to_match_update(payload: Dict[str, Any]) -> Dict[str, Any]:
     """
     match_info = payload.get("match") or {}
     match_name = match_info.get("name") or ""
-    match_id = extract_match_id(match_name)
+    match_id = (
+        match_info.get("matchId")
+        or match_info.get("match_id")
+        or extract_match_id(match_name)
+    )
 
     if not match_id:
         raise ValueError(
-            f"試合名 '{match_name}' から match_id (例: MA-1, MK-1) を抽出できませんでした"
+            f"試合情報 (matchId または 試合名 '{match_name}') から match_id (例: MA-1, MK-1) を抽出できませんでした"
         )
 
     # スコアの取得

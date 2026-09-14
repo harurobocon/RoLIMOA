@@ -76,6 +76,23 @@ class TestMatchConverter(unittest.TestCase):
                 50, 50, VTIME_SENTINEL, VTIME_SENTINEL, {}, {}, red_winner_flag=False, blue_winner_flag=False
             )
 
+    def test_convert_payload_with_match_id(self):
+        payload = {
+            "match": {
+                "name": "予選第1試合",
+                "matchId": "MA-1",
+                "matchNo": 1,
+            },
+            "confirmedScore": {"red": 50, "blue": 30},
+            "finalScore": {"fields": {"red": {}, "blue": {}}},
+        }
+        res = convert_payload_to_match_update(payload)
+        self.assertEqual(res["match_id"], "MA-1")
+        self.assertEqual(res["score_red"], 50)
+        self.assertEqual(res["score_blue"], 30)
+        self.assertEqual(res["winner_side"], "red")
+        self.assertEqual(res["win_reason"], "得点")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -117,6 +117,37 @@ app.get('/api/state', (req, res) => {
   res.json(result);
 });
 
+/**
+ * Homepage APIから対戦表一覧を取得・プロキシするエンドポイント (CORS回避用)
+ */
+app.get('/api/homepage/matches', async (req, res) => {
+  try {
+    let targetUrl =
+      req.query.url?.toString().trim() ||
+      process.env.HOMEPAGE_MATCH_API_URL ||
+      process.env.HOMEPAGE_API_URL ||
+      'http://localhost:8000/staff/matches/api/list/';
+
+    if (!targetUrl.includes('/matches/api/list/')) {
+      const cleanBase = targetUrl.replace(/\/+$/, '');
+      targetUrl = `${cleanBase}/staff/matches/api/list/`;
+    }
+
+    const response = await fetch(targetUrl);
+    if (!response.ok) {
+      res.status(response.status).json({
+        error: `Failed to fetch from homepage: ${response.status} ${response.statusText}`,
+      });
+      return;
+    }
+    const data = await response.json();
+    res.json(data);
+  } catch (err: unknown) {
+    console.error('[Homepage Matches Proxy] Error fetching matches:', err);
+    res.status(500).json({ error: String(err) });
+  }
+});
+
 // クライアントのホスティング
 app.use(express.static('../client/dist'));
 app.get('*', (_req, res, _next) => {

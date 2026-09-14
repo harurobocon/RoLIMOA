@@ -3,6 +3,8 @@ import type { FieldSideType } from './score.js';
 
 export type MatchState = {
   name: string; // 試合名
+  matchId?: string; // 試合ID (例: MA-1, MK-1)
+  matchNo?: number; // 試合順序 (例: 1, 2...)
   teams: TeamsType; // 各チームの情報
   isConfirmed: boolean; // 試合の結果が確定したかどうか
 };
