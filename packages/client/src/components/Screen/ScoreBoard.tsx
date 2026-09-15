@@ -1,7 +1,7 @@
 import TimerOutlinedIcon from '@mui/icons-material/TimerOutlined';
 import { Box } from '@mui/material';
 import { config } from '@rolimoa/common/config';
-import type { RootState } from '@rolimoa/common/redux';
+import type { RootState, TeamType } from '@rolimoa/common/redux';
 import { useSelector } from 'react-redux';
 import { useDisplayScore } from '~/functional/useDisplayScore';
 import { formatTime } from '~/util/formatTime';
@@ -12,9 +12,11 @@ type ScoreBoardProps = {
 };
 
 export const ScoreBoard = ({ fieldSide }: ScoreBoardProps) => {
-  const teamName = useSelector<RootState, string>(
-    (state) => state.match.teams[fieldSide]?.shortName ?? '',
+  const team = useSelector<RootState, TeamType | undefined>(
+    (state) => state.match.teams[fieldSide],
   );
+  const teamName = team?.shortName ?? '';
+  const schoolName = team?.school ?? '';
   const { value, scoreState } = useDisplayScore(fieldSide);
   const color = fieldSide === 'blue' ? 'rgba(0, 0, 250, 0.9)' : 'rgba(250, 0, 0, 0.9)';
 
@@ -32,17 +34,49 @@ export const ScoreBoard = ({ fieldSide }: ScoreBoardProps) => {
         sx={{
           backgroundColor: color,
           color: 'rgb(240, 240, 240)',
-          height: '60px',
-          lineHeight: '65px',
-          fontSize: '0.7em',
+          height: '64px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
           px: '0.5em',
+          overflow: 'hidden',
         }}
       >
-        {teamName}
+        <Box
+          sx={{
+            fontSize: schoolName ? '24px' : '30px',
+            fontWeight: 700,
+            lineHeight: 1.2,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            maxWidth: '100%',
+          }}
+        >
+          {teamName}
+        </Box>
+        {schoolName && (
+          <Box
+            sx={{
+              fontSize: '15px',
+              fontWeight: 500,
+              lineHeight: 1.2,
+              opacity: 0.9,
+              mt: '2px',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              maxWidth: '100%',
+            }}
+          >
+            {schoolName}
+          </Box>
+        )}
       </Box>
       <Box
         sx={{
-          height: '120px',
+          height: '116px',
           fontSize: '1.5em',
           backgroundColor: 'rgba(255, 255, 255, 0.6)',
           display: 'flex',

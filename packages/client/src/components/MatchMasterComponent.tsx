@@ -12,7 +12,7 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
-import type { HomepageMatch } from '~/types/homepageMatch';
+import { type HomepageMatch, formatHomepageTeamName } from '~/types/homepageMatch';
 
 export interface MatchMasterComponentProps {
   matchName: string;
@@ -121,7 +121,7 @@ export const MatchMasterComponent = ({
                 <Autocomplete
                   options={syncedMatches}
                   getOptionLabel={(option) =>
-                    `#${option.match_no} ${option.match_id?.startsWith('MK') ? '決勝' : '予選'} (${option.match_id}): 赤: ${option.team_red?.display_name || option.team_red?.school_name} vs 青: ${option.team_blue?.display_name || option.team_blue?.school_name} [${option.status === 'completed' ? '終了' : '予定'}]`
+                    `#${option.match_no} ${option.match_id?.startsWith('MK') ? '決勝' : '予選'} (${option.match_id}): 赤: ${formatHomepageTeamName(option.team_red)} vs 青: ${formatHomepageTeamName(option.team_blue)} [${option.status === 'completed' ? '終了' : '予定'}]`
                   }
                   value={selectedMatch}
                   onChange={(_, val) => onSelectHomepageMatch(val ? val.match_id : '')}
@@ -209,13 +209,13 @@ export const MatchMasterComponent = ({
           <Autocomplete
             freeSolo
             options={teamOptions}
-            value={blueTeamName}
-            onInputChange={(event, val) => onChangeBlueTeamName(event, val)}
-            onChange={(event, val) => onChangeBlueTeamName(event, val)}
+            value={redTeamName}
+            onInputChange={(event, val) => onChangeRedTeamName(event, val)}
+            onChange={(event, val) => onChangeRedTeamName(event, val)}
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="青チーム名"
+                label="赤チーム名"
                 margin="normal"
                 variant="outlined"
                 InputProps={{ ...params.InputProps, type: 'search' }}
@@ -226,13 +226,13 @@ export const MatchMasterComponent = ({
           <Autocomplete
             freeSolo
             options={teamOptions}
-            value={redTeamName}
-            onInputChange={(event, val) => onChangeRedTeamName(event, val)}
-            onChange={(event, val) => onChangeRedTeamName(event, val)}
+            value={blueTeamName}
+            onInputChange={(event, val) => onChangeBlueTeamName(event, val)}
+            onChange={(event, val) => onChangeBlueTeamName(event, val)}
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="赤チーム名"
+                label="青チーム名"
                 margin="normal"
                 variant="outlined"
                 InputProps={{ ...params.InputProps, type: 'search' }}

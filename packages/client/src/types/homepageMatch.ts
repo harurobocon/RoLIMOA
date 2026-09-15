@@ -16,3 +16,15 @@ export interface HomepageMatch {
   team_red: HomepageMatchTeam;
   team_blue: HomepageMatchTeam;
 }
+
+export function formatHomepageTeamName(team?: HomepageMatchTeam | null): string {
+  if (!team) return '';
+  const no = team.team_no != null && team.team_no !== undefined && team.team_no > 0
+    ? String(team.team_no).padStart(2, '0')
+    : '';
+  if (no && team.team_name) {
+    return `${no}_${team.team_name}`;
+  }
+  return team.team_name || team.display_name || team.school_name || '';
+}
+

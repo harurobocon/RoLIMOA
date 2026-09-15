@@ -9,7 +9,7 @@ import { useSelector } from 'react-redux';
 import { useRecoilValue } from 'recoil';
 import { unixtimeOffset } from '~/atoms/unixtimeOffset';
 import { LyricalSocket } from '~/lyricalSocket';
-import type { HomepageMatch } from '~/types/homepageMatch';
+import { type HomepageMatch, formatHomepageTeamName } from '~/types/homepageMatch';
 import { MatchMasterComponent } from './MatchMasterComponent';
 
 const STORAGE_KEY_MATCHES = 'rolimoa_synced_homepage_matches';
@@ -62,21 +62,29 @@ export const MatchMasterContainer = () => {
   const syncedTeams = useMemo(() => {
     const map = new Map<string, TeamType>();
     for (const m of syncedMatches) {
-      if (m.team_red?.display_name) {
-        map.set(m.team_red.display_name, {
+      if (m.team_red) {
+        const formatted = formatHomepageTeamName(m.team_red);
+        const teamObj: TeamType = {
           id: String(m.team_red.team_no),
           name: m.team_red.team_name,
           school: m.team_red.school_name,
-          shortName: m.team_red.display_name,
-        });
+          shortName: formatted,
+        };
+        if (formatted) map.set(formatted, teamObj);
+        if (m.team_red.display_name) map.set(m.team_red.display_name, teamObj);
+        if (m.team_red.team_name) map.set(m.team_red.team_name, teamObj);
       }
-      if (m.team_blue?.display_name) {
-        map.set(m.team_blue.display_name, {
+      if (m.team_blue) {
+        const formatted = formatHomepageTeamName(m.team_blue);
+        const teamObj: TeamType = {
           id: String(m.team_blue.team_no),
           name: m.team_blue.team_name,
           school: m.team_blue.school_name,
-          shortName: m.team_blue.display_name,
-        });
+          shortName: formatted,
+        };
+        if (formatted) map.set(formatted, teamObj);
+        if (m.team_blue.display_name) map.set(m.team_blue.display_name, teamObj);
+        if (m.team_blue.team_name) map.set(m.team_blue.team_name, teamObj);
       }
     }
     return map;
@@ -88,11 +96,18 @@ export const MatchMasterContainer = () => {
     for (const info of config.teams_info) {
       if (info.short) set.add(info.short);
     }
-    for (const name of syncedTeams.keys()) {
-      set.add(name);
+    for (const m of syncedMatches) {
+      if (m.team_red) {
+        const formatted = formatHomepageTeamName(m.team_red);
+        if (formatted) set.add(formatted);
+      }
+      if (m.team_blue) {
+        const formatted = formatHomepageTeamName(m.team_blue);
+        if (formatted) set.add(formatted);
+      }
     }
     return Array.from(set);
-  }, [syncedTeams]);
+  }, [syncedMatches]);
 
   // チーム名からチーム詳細情報を取得
   const getTeamInfo = useCallback(
@@ -200,11 +215,11 @@ export const MatchMasterContainer = () => {
       setCurrentMatchId(match.match_id);
       setCurrentMatchNo(match.match_no);
 
-      if (match.team_blue?.display_name) {
-        setBlueTeamName(match.team_blue.display_name);
+      if (match.team_blue) {
+        setBlueTeamName(formatHomepageTeamName(match.team_blue));
       }
-      if (match.team_red?.display_name) {
-        setRedTeamName(match.team_red.display_name);
+      if (match.team_red) {
+        setRedTeamName(formatHomepageTeamName(match.team_red));
       }
     },
     [syncedMatches],

@@ -2,8 +2,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import TableRowsIcon from '@mui/icons-material/TableRows';
 import { Box, Typography } from '@mui/material';
-import type { FieldSideType, RootState } from '@rolimoa/common/redux';
-import { useSelector } from 'react-redux';
+import type { FieldSideType } from '@rolimoa/common/redux';
 import { useCurrentMatchState } from '~/functional/useCurrentMatchState';
 
 type UnderlayProps = {
@@ -49,9 +48,6 @@ const TierBlockRow = ({
 
 // チームごとの詳細パネル（高さを少し下げてタイマーとの美しい余白を形成）
 const TeamStatusCard = ({ fieldSide }: { fieldSide: FieldSideType }) => {
-  const teamName = useSelector<RootState, string>(
-    (state) => state.match.teams[fieldSide]?.name ?? '',
-  );
   const { taskObjects } = useCurrentMatchState(fieldSide);
 
   const contactMaterial = (taskObjects.contact_material ?? 0) >= 1;
@@ -91,8 +87,8 @@ const TeamStatusCard = ({ fieldSide }: { fieldSide: FieldSideType }) => {
           flexShrink: 0,
         }}
       >
-        {/* 左: チームカラーサークルアイコン + チーム名 */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        {/* 左: チームカラーサークルアイコン */}
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <Box
             sx={{
               width: '24px',
@@ -103,19 +99,6 @@ const TeamStatusCard = ({ fieldSide }: { fieldSide: FieldSideType }) => {
               flexShrink: 0,
             }}
           />
-          <Typography
-            sx={{
-              fontSize: '24px',
-              fontWeight: 800,
-              color: '#1f2937',
-              maxWidth: '360px',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {teamName}
-          </Typography>
         </Box>
 
         {/* 右: 建材接触バッジ */}
