@@ -103,23 +103,31 @@ async def on_add_result(payload: Dict[str, Any]):
         print("❌ 認証情報が未設定のため投稿できませんでした:", ", ".join(missing_variables))
         return
 
-    try:
-        client = tweepy.Client(
-            consumer_key=os.environ["X_API_KEY"],
-            consumer_secret=os.environ["X_API_KEY_SECRET"],
-            access_token=os.environ["X_ACCESS_TOKEN"],
-            access_token_secret=os.environ["X_ACCESS_TOKEN_SECRET"],
-        )
+    max_retries = 3
+    for attempt in range(1, max_retries + 1):
+        try:
+            client = tweepy.Client(
+                consumer_key=os.environ["X_API_KEY"],
+                consumer_secret=os.environ["X_API_KEY_SECRET"],
+                access_token=os.environ["X_ACCESS_TOKEN"],
+                access_token_secret=os.environ["X_ACCESS_TOKEN_SECRET"],
+            )
 
-        response = client.create_tweet(text=tweet_text, user_auth=True)
-        post_id = response.data["id"]
-        posted_match_keys.add(match_key)
+            response = client.create_tweet(text=tweet_text, user_auth=True)
+            post_id = response.data["id"]
+            posted_match_keys.add(match_key)
 
-        print(f"✅ Xへの投稿に成功しました！")
-        print(f"🔗 https://x.com/i/status/{post_id}")
+            print(f"✅ Xへの投稿に成功しました！")
+            print(f"🔗 https://x.com/i/status/{post_id}")
+            break
 
-    except Exception as e:
-        print(f"❌ Xへの投稿中にエラーが発生しました: {e}")
+        except Exception as e:
+            print(f"⚠️ X投稿試行 {attempt}/{max_retries} でエラー: {e}")
+            if attempt < max_retries:
+                print("一時的なネットワーク/DNSエラーの可能性があるため、3秒後に再試行します...")
+                await asyncio.sleep(3)
+            else:
+                print(f"❌ Xへの投稿に最終的に失敗しました: {e}")
 
 
 async def main():

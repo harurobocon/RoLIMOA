@@ -1,6 +1,6 @@
 export async function notifyRotacsMatchStatus(storeState: Record<string, unknown>) {
   try {
-    const rotacsUrl = process.env.ROTACS_API_URL || 'http://localhost:3000';
+    const rotacsUrl = (process.env.ROTACS_API_URL || 'https://rotacs.kantouharurobo.com').replace(/\/+$/, '');
     const rotacsSecret = process.env.ROTACS_API_SECRET?.trim();
 
     // biome-ignore lint/suspicious/noExplicitAny: state typing

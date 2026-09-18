@@ -122,11 +122,15 @@ app.get('/api/state', (req, res) => {
  */
 app.get('/api/homepage/matches', async (req, res) => {
   try {
+    let rawUrl = req.query.url?.toString().trim();
+    if (rawUrl && rawUrl.includes('localhost:8000')) {
+      rawUrl = undefined;
+    }
     let targetUrl =
-      req.query.url?.toString().trim() ||
+      rawUrl ||
       process.env.HOMEPAGE_MATCH_API_URL ||
       process.env.HOMEPAGE_API_URL ||
-      'http://localhost:8000/staff/matches/api/list/';
+      'https://kantouharurobo.com/staff/matches/api/list/';
 
     if (!targetUrl.includes('/matches/api/list/')) {
       const cleanBase = targetUrl.replace(/\/+$/, '');
@@ -155,6 +159,9 @@ app.get('*', (_req, res, _next) => {
 });
 
 const PORT = Number(process.env.PORT) || 8000;
+const HOST = process.env.HOST || '0.0.0.0';
 
-app.listen(PORT);
-console.log('server start');
+app.listen(PORT, HOST, () => {
+  console.log(`server started on http://${HOST}:${PORT}`);
+});
+

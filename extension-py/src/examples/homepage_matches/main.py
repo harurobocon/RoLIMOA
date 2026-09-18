@@ -31,9 +31,9 @@ parser.add_argument(
     "--api-url",
     type=str,
     default=os.environ.get(
-        "HOMEPAGE_API_URL", "http://localhost:8000/staff/matches/api/update/"
+        "HOMEPAGE_API_URL", "https://kantouharurobo.com/staff/matches/api/update/"
     ),
-    help="homepage matches update API の URL (デフォルト: http://localhost:8000/staff/matches/api/update/)",
+    help="homepage matches update API の URL (デフォルト: https://kantouharurobo.com/staff/matches/api/update/)",
 )
 parser.add_argument(
     "--api-token",
@@ -104,6 +104,7 @@ async def on_add_result(payload: Dict[str, Any]):
         "Content-Type": "application/json",
     }
     if args.api_token:
+        headers["API-TOKEN"] = args.api_token
         headers["API_TOKEN"] = args.api_token
 
     try:

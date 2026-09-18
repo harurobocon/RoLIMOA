@@ -14,7 +14,7 @@ import { MatchMasterComponent } from './MatchMasterComponent';
 
 const STORAGE_KEY_MATCHES = 'rolimoa_synced_homepage_matches';
 const STORAGE_KEY_API_URL = 'rolimoa_homepage_api_url';
-const DEFAULT_API_URL = 'http://localhost:8000/staff/matches/api/list/';
+const DEFAULT_API_URL = 'https://kantouharurobo.com/staff/matches/api/list/';
 
 function loadInitialSyncedMatches(): HomepageMatch[] {
   try {
@@ -31,7 +31,11 @@ function loadInitialSyncedMatches(): HomepageMatch[] {
 
 function loadInitialApiUrl(): string {
   try {
-    return localStorage.getItem(STORAGE_KEY_API_URL) || DEFAULT_API_URL;
+    const saved = localStorage.getItem(STORAGE_KEY_API_URL);
+    if (saved && !saved.includes('localhost:8000')) {
+      return saved;
+    }
+    return DEFAULT_API_URL;
   } catch {
     return DEFAULT_API_URL;
   }

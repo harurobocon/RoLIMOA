@@ -71,6 +71,7 @@ def main():
         "Content-Type": "application/json",
     }
     if args.api_token:
+        headers["API-TOKEN"] = args.api_token
         headers["API_TOKEN"] = args.api_token
 
     print("=== homepage matches API テストリクエスト ===")
